@@ -1,3 +1,3 @@
 Aggiunta plugin:
-- inserimento contenrful asset link
+- inserimento contentful asset link
 - inserimento immagini inline
