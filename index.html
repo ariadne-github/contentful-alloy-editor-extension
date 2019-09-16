@@ -1,0 +1,157 @@
+<!doctype html>
+<head>
+  <link href="https://contentful.github.io/ui-extensions-sdk/cf-extension.css" rel="stylesheet">
+  <link href="https://contentful.github.io/extensions/libs/alloy-editor/assets/alloy-editor-ocean-min.css" rel="stylesheet">
+  <script src="https://contentful.github.io/extensions/libs/alloy-editor/alloy-editor-all-min.js"></script>
+  <script src="https://unpkg.com/contentful-ui-extensions-sdk@3"></script>
+  <style>
+    body {
+      margin: 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    #content {
+      outline: 0;
+      padding: 1em;
+      margin-left: 3em;
+      margin-top: -1px;
+      margin-bottom: -1px;
+      min-height: 30em;
+    }
+    #content h2 {
+    	line-height: 30px;
+    }
+     #content .img-editor {
+    	max-width: 100%;
+    }
+    .ae-ui .ae-button-bridge .ae-icon-img_asset, 
+    .ae-ui .ae-button-bridge .ae-icon-link_asset {
+    	width: 20px;
+      height: 20px;
+      line-height: 20px;
+    }
+    .ae-icon-img_asset::before {
+       content: "\";
+    }
+    .ae-icon-link_asset::before {
+    	content: "\";
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <div id="content"></div>
+  <script>
+  var cfExt = window.contentfulExtension || window.contentfulWidget
+
+  const AlloyEditor = window.AlloyEditor
+
+  cfExt.init(function (ext) {
+    var currentValue
+
+    ext.window.startAutoResizer()
+		
+    CKEDITOR.plugins.add( 'img_asset', {
+      init: function( editor ) {
+          
+      	  editor.addCommand('img_asset', {
+          	 exec: function( editor ) {
+               ext.dialogs.selectSingleAsset({}).then(data => {
+               	console.log(data);
+               	editor.insertHtml( '<img class="img-editor" alt="'+data.fields.title[ext.field.locale]+'" src="' + data.fields.file[ext.field.locale].url + '"/>' );
+               })
+          	}}
+          );
+        	editor.ui.addButton( 'img_asset', {
+            label: 'Insert Image',
+            command: 'img_asset'
+        	});  
+      }
+  });
+    
+  CKEDITOR.plugins.add( 'link_asset', {
+      init: function( editor ) {
+          
+      	  editor.addCommand('link_asset', {
+          	 exec: function( editor ) {
+               ext.dialogs.selectSingleAsset({
+               	 locale: ext.field.locale,
+               }).then(data => {
+                 console.log("data",data);
+                 editor.insertHtml('<a href="'+data.fields.file[ext.field.locale].url+'">'+editor.getSelection().getSelectedText()+'</a>');			
+               })
+          	}}
+          );
+        	editor.ui.addButton( 'link_asset', {
+            label: 'Insert Link',
+            command: 'link_asset'
+        	});  
+      }
+  });
+    
+    const editor = AlloyEditor.editable('content', {
+    extraPlugins: AlloyEditor.Core.ATTRS.extraPlugins.value + ',ae_uibridge,ae_buttonbridge,img_asset,link_asset',
+	toolbars: {
+     add: {
+      buttons: ['image','table','img_asset'],
+      tabIndex: 3
+    },
+    styles: {
+			tabIndex: 1,
+      selections: [
+				{
+					name: 'text',
+					buttons: [{
+						name: 'styles',
+						cfg: {
+							styles: [
+								{
+									name: 'Head 1',
+									style: { element: 'h1' }
+								},
+								{
+									name: 'Head 2',
+									style: { element: 'h2' }
+								},
+								{
+									name: 'Big',
+									style: { element: 'big', attributes: { 'class': 'my_style' } }
+								},
+								{
+									name: 'Small',
+									style: { element: 'small' }
+								},
+								{
+									name: 'Code',
+									style: { element: 'code' }
+								}
+							]
+						}
+					},'bold', 'italic', 'underline', 'link','ul','link_asset'],
+					test: AlloyEditor.SelectionTest.text
+				}
+			]
+		}
+	}
+})._editor
+    editor.setData(ext.field.getValue())
+	  console.log(editor);
+    ext.field.onValueChanged(function(value) {
+      if (value !== currentValue) {
+        currentValue = value
+        editor.setData(value)
+      }
+    })
+
+    editor.on('change', function() {
+      const value = editor.getData()
+
+      if (currentValue !== value) {
+        currentValue = value
+        ext.field.setValue(value)
+      }
+    })
+  })
+  </script>
+</body>
